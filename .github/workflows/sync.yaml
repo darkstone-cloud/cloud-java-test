@@ -10,7 +10,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: openapitools/openapi-generator-cli@2.0.1
+      - uses: openapitools/openapi-generator-cli@v2.39.0
         with:
           generator: java
           openapi-file: https://api.darkstone.de/v3/api-docs
