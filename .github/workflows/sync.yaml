@@ -57,46 +57,30 @@ jobs:
             --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles=false \
             --additional-properties=library=native
 
-      - name: Push and Release
+      - name: Setup Java
+        if: steps.check_spec.outputs.changed == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Publish Java Package to GitHub Packages
+        if: steps.check_spec.outputs.changed == 'true'
+        run: |
+          chmod +x gradlew
+          ./gradlew publish \
+            -Pversion="1.0.${{ github.run_number }}" \
+            -PrepositoryUrl="https://maven.pkg.github.com/${{ github.repository }}" \
+            -PgithubUsername="${{ github.actor }}" \
+            -PgithubPassword="${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Push Spec Changes to Repository
         if: steps.check_spec.outputs.changed == 'true'
         run: |
           git config user.name "bot"
           git config user.email "bot@darkstone.de"
-          git add .
+          git add openapi-spec.json
           VERSION="1.0.$(date +%s)"
-          git commit -m "chore(api): auto-update to $VERSION"
+          git commit -m "chore(api): update spec for version $VERSION"
           git tag -a "v$VERSION" -m "Release $VERSION"
           git push origin main --tags
-
-      - name: Create Temporary Dockerfile
-        if: steps.check_spec.outputs.changed == 'true'
-        run: |
-          if [ ! -f Dockerfile ]; then
-            cat <<EOF > Dockerfile
-          FROM eclipse-temurin:21-jre-alpine
-          WORKDIR /app
-          COPY . .
-          EOF
-          fi
-
-      - name: Setup Docker Buildx
-        if: steps.check_spec.outputs.changed == 'true'
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        if: steps.check_spec.outputs.changed == 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and Push Docker Image
-        if: steps.check_spec.outputs.changed == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.run_number }}
