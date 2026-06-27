@@ -77,21 +77,24 @@ jobs:
             --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles=true \
             --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model,generateSupportingFiles=true
           
-          # Dateirechte vom Docker-Root-User auf den Runner-User übertragen
           sudo chown -R $USER:$USER generated/java
 
-      - name: Setup Java Environment
+      - name: Setup Java & Maven Environment
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+          server-id: github # Konfiguriert die settings.xml automatisch für GitHub Packages
 
-      - name: Publish Java Package
+      - name: Publish Java Package via Maven
         run: |
           cd generated/java
-          chmod +x gradlew
-          ./gradlew publish \
-            -Pversion="1.0.${{ github.run_number }}" \
-            -PrepositoryUrl="https://maven.pkg.github.com/${{ github.repository }}" \
-            -PgithubUsername="${{ github.actor }}" \
-            -PgithubPassword="${{ secrets.GITHUB_TOKEN }}"
+          
+          # GitHub Packages verlangt die target-Repository-URL in der pom.xml. 
+          # Wir übergeben sie dynamisch beim Maven-Invocator.
+          mvn deploy \
+            -Dregistry=https://maven.pkg.github.com/${{ github.repository }} \
+            -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }} \
+            -Drevision="1.0.${{ github.run_number }}" \
+            -Dusername="${{ github.actor }}" \
+            -Dpassword="${{ secrets.GITHUB_TOKEN }}"
