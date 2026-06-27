@@ -69,7 +69,7 @@ jobs:
       - name: Generate Java SDK
         run: |
           mkdir -p generated/java
-          docker run --rm -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
+          docker run --rm -u $(id -u):$(id -g) -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
             -i /local/openapi-spec.json \
             -g java \
             -o /local/generated/java \
@@ -86,8 +86,6 @@ jobs:
       - name: Publish Java Package
         run: |
           cd generated/java
-          # CI-Workflow-Ordner löschen, falls der Generator ihn angelegt hat (verhindert Push-Konflikte)
-          rm -rf .github
           chmod +x gradlew
           ./gradlew publish \
             -Pversion="1.0.${{ github.run_number }}" \
