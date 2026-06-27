@@ -29,7 +29,7 @@ jobs:
   check-spec:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Wichtig, damit der Bot die Spec zurückpushen darf
+      contents: write
     outputs:
       changed: ${{ steps.check_spec.outputs.changed }}
     steps:
@@ -74,8 +74,8 @@ jobs:
             -g java \
             -o /local/generated/java \
             --skip-validate-spec \
-            --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles=false \
-            --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model
+            --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles=true \
+            --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model,generateSupportingFiles=true
 
       - name: Setup Java Environment
         uses: actions/setup-java@v4
@@ -86,6 +86,8 @@ jobs:
       - name: Publish Java Package
         run: |
           cd generated/java
+          # CI-Workflow-Ordner löschen, falls der Generator ihn angelegt hat (verhindert Push-Konflikte)
+          rm -rf .github
           chmod +x gradlew
           ./gradlew publish \
             -Pversion="1.0.${{ github.run_number }}" \
