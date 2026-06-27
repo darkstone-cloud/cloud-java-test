@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate Java SDK
+      - name: Generate Java SDK (Maven)
         run: |
           mkdir -p generated/java
           docker run --rm -v ${{ github.workspace }}:/local \
@@ -76,25 +76,20 @@ jobs:
             -g java \
             -o /local/generated/java \
             --skip-validate-spec \
-            --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model,buildFile=gradle
+            --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model
 
           sudo chown -R $USER:$USER generated/java
-          
-          echo "=== VERIFY GENERATED FILES ==="
-          ls -la generated/java
 
       - name: Setup Java Environment
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+          server-id: github # Richtet die Authentifizierung für GitHub Packages ein
 
-      - name: Publish Java Package via Gradle
+      - name: Publish Java Package via Maven
         run: |
           cd generated/java
-          if [ -f gradlew ]; then
-            chmod +x gradlew
-            ./gradlew publish -Pversion="1.0.${{ github.run_number }}" -PrepositoryUrl="https://maven.pkg.github.com/${{ github.repository }}" -PgithubUsername="${{ github.actor }}" -PgithubPassword="${{ secrets.GITHUB_TOKEN }}"
-          else
-            gradle publish -Pversion="1.0.${{ github.run_number }}" -PrepositoryUrl="https://maven.pkg.github.com/${{ github.repository }}" -PgithubUsername="${{ github.actor }}" -PgithubPassword="${{ secrets.GITHUB_TOKEN }}"
-          fi
+          mvn deploy \
+            -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }} \
+            -Dversion="1.0.${{ github.run_number }}"
