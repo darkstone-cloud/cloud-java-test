@@ -15,9 +15,12 @@ jobs:
             -i https://api.darkstone.de/v3/api-docs \
             -g java \
             -o /local \
-            --skip-validate-spec
+            --skip-validate-spec \
+            --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false \
+            --additional-properties=generateSupportingFiles=true
       - run: |
           git config user.name "bot"
           git config user.email "bot@darkstone.de"
+          rm -rf .github/workflows/maven.yml .travis.yml # Sicherungskopie löschen, falls doch generiert
           git add .
           git commit -m "chore(api): auto-update" && git push || true
