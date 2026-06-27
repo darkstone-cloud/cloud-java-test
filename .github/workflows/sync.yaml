@@ -69,13 +69,16 @@ jobs:
       - name: Generate Java SDK
         run: |
           mkdir -p generated/java
-          docker run --rm -u $(id -u):$(id -g) -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
+          docker run --rm -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
             -i /local/openapi-spec.json \
             -g java \
             -o /local/generated/java \
             --skip-validate-spec \
             --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles=true \
             --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model,generateSupportingFiles=true
+          
+          # Dateirechte vom Docker-Root-User auf den Runner-User übertragen
+          sudo chown -R $USER:$USER generated/java
 
       - name: Setup Java Environment
         uses: actions/setup-java@v4
