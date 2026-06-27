@@ -69,16 +69,13 @@ jobs:
       - name: Generate Java SDK
         run: |
           mkdir -p generated/java
-          # Wir übergeben alle Optionen als einheitliche Definitions-Flags (-D), um CLI-Fehler zu vermeiden
-          docker run --rm -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
+          docker run --rm -v ${{ github.workspace }}:/local \
+            -e GENERATOR_CLI_JVM_ARGS="-DapiTests=false -DmodelTests=false -DapiDocs=false -DmodelDocs=false" \
+            openapitools/openapi-generator-cli generate \
             -i /local/openapi-spec.json \
             -g java \
             -o /local/generated/java \
             --skip-validate-spec \
-            -DapiTests=false \
-            -DmodelTests=false \
-            -DapiDocs=false \
-            -DmodelDocs=false \
             --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model,buildFile=gradle
 
           sudo chown -R $USER:$USER generated/java
@@ -95,7 +92,6 @@ jobs:
       - name: Publish Java Package via Gradle
         run: |
           cd generated/java
-          # Falls gradlew existiert, machen wir es ausführbar. Falls nicht, nutzen wir den installierten Gradle-Wrapper.
           if [ -f gradlew ]; then
             chmod +x gradlew
             ./gradlew publish -Pversion="1.0.${{ github.run_number }}" -PrepositoryUrl="https://maven.pkg.github.com/${{ github.repository }}" -PgithubUsername="${{ github.actor }}" -PgithubPassword="${{ secrets.GITHUB_TOKEN }}"
