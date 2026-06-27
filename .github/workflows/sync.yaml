@@ -16,11 +16,10 @@ jobs:
             -g java \
             -o /local \
             --skip-validate-spec \
-            --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false \
-            --additional-properties=generateSupportingFiles=true
+            -DapiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles \
+            --additional-properties=generateSupportingFiles=false
       - run: |
           git config user.name "bot"
           git config user.email "bot@darkstone.de"
-          rm -rf .github/workflows/maven.yml .travis.yml # Sicherungskopie löschen, falls doch generiert
           git add .
           git commit -m "chore(api): auto-update" && git push || true
