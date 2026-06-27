@@ -17,7 +17,7 @@ jobs:
             -o /local \
             --skip-validate-spec \
             -DapiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles \
-            --additional-properties=generateSupportingFiles=false
+            --additional-properties=library=native,generateSupportingFiles=false
       - run: |
           git config user.name "bot"
           git config user.email "bot@darkstone.de"
