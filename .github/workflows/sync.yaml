@@ -28,6 +28,8 @@ on:
 jobs:
   check-spec:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Wichtig, damit der Bot die Spec zurückpushen darf
     outputs:
       changed: ${{ steps.check_spec.outputs.changed }}
     steps:
