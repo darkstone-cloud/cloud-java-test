@@ -14,7 +14,8 @@ jobs:
           docker run --rm -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
             -i https://api.darkstone.de/v3/api-docs \
             -g java \
-            -o /local
+            -o /local \
+            --skip-validate-spec
       - run: |
           git config user.name "bot"
           git config user.email "bot@darkstone.de"
