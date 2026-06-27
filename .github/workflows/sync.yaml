@@ -10,11 +10,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: openapitools/openapi-generator-cli@v2.39.0
-        with:
-          generator: java
-          openapi-file: https://api.darkstone.de/v3/api-docs
-          command-args: -o .
+      - run: |
+          docker run --rm -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
+            -i https://api.darkstone.de/v3/api-docs \
+            -g java \
+            -o /local
       - run: |
           git config user.name "bot"
           git config user.email "bot@darkstone.de"
