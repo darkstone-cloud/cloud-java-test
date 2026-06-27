@@ -20,20 +20,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-name: Hourly API Sync
+name: Hourly Java API Sync
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
 jobs:
-  sync:
+  check-spec:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
+    outputs:
+      changed: ${{ steps.check_spec.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Check for updates
         id: check_spec
         run: |
@@ -45,36 +43,7 @@ jobs:
             mv current.json openapi-spec.json
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
-
-      - name: Generate SDK
-        if: steps.check_spec.outputs.changed == 'true'
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
-            -i /local/openapi-spec.json \
-            -g java \
-            -o /local \
-            --skip-validate-spec \
-            --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles=false \
-            --additional-properties=library=native
-
-      - name: Setup Java
-        if: steps.check_spec.outputs.changed == 'true'
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Publish Java Package to GitHub Packages
-        if: steps.check_spec.outputs.changed == 'true'
-        run: |
-          chmod +x gradlew
-          ./gradlew publish \
-            -Pversion="1.0.${{ github.run_number }}" \
-            -PrepositoryUrl="https://maven.pkg.github.com/${{ github.repository }}" \
-            -PgithubUsername="${{ github.actor }}" \
-            -PgithubPassword="${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Push Spec Changes to Repository
+      - name: Commit Spec Update
         if: steps.check_spec.outputs.changed == 'true'
         run: |
           git config user.name "bot"
@@ -84,3 +53,40 @@ jobs:
           git commit -m "chore(api): update spec for version $VERSION"
           git tag -a "v$VERSION" -m "Release $VERSION"
           git push origin main --tags
+
+  publish-java:
+    needs: check-spec
+    if: needs.check-spec.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Java SDK
+        run: |
+          mkdir -p generated/java
+          docker run --rm -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
+            -i /local/openapi-spec.json \
+            -g java \
+            -o /local/generated/java \
+            --skip-validate-spec \
+            --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles=false \
+            --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model
+
+      - name: Setup Java Environment
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Publish Java Package
+        run: |
+          cd generated/java
+          chmod +x gradlew
+          ./gradlew publish \
+            -Pversion="1.0.${{ github.run_number }}" \
+            -PrepositoryUrl="https://maven.pkg.github.com/${{ github.repository }}" \
+            -PgithubUsername="${{ github.actor }}" \
+            -PgithubPassword="${{ secrets.GITHUB_TOKEN }}"
