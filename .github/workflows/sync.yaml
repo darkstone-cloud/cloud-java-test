@@ -8,18 +8,62 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
-      - run: |
+
+      - name: Check for updates
+        id: check_spec
+        run: |
+          curl -s https://api.darkstone.de/v3/api-docs -o current.json
+          if [ -f openapi-spec.json ] && cmp -s openapi-spec.json current.json; then
+            echo "No changes found. Aborting."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            mv current.json openapi-spec.json
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate SDK
+        if: steps.check_spec.outputs.changed == 'true'
+        run: |
           docker run --rm -v ${{ github.workspace }}:/local openapitools/openapi-generator-cli generate \
-            -i https://api.darkstone.de/v3/api-docs \
+            -i /local/openapi-spec.json \
             -g java \
             -o /local \
             --skip-validate-spec \
             --global-property apiTests=false,modelTests=false,apiDocs=false,modelDocs=false,supportingFiles=false \
             --additional-properties=library=native
-      - run: |
+
+      - name: Push and Release
+        if: steps.check_spec.outputs.changed == 'true'
+        run: |
           git config user.name "bot"
           git config user.email "bot@darkstone.de"
           git add .
-          git commit -m "chore(api): auto-update" && git push || true
+          VERSION="1.0.$(date +%s)"
+          git commit -m "chore(api): auto-update to $VERSION"
+          git tag -a "v$VERSION" -m "Release $VERSION"
+          git push origin main --tags
+
+      - name: Setup Docker Buildx
+        if: steps.check_spec.outputs.changed == 'true'
+        uses: actions/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: steps.check_spec.outputs.changed == 'true'
+        uses: actions/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        if: steps.check_spec.outputs.changed == 'true'
+        uses: actions/docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.run_number }}
