@@ -34,7 +34,7 @@ jobs:
     outputs:
       changed: ${{ steps.check_spec.outputs.changed }}
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       
       - name: Check for updates
         id: check_spec
@@ -67,7 +67,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       
       - name: Generate Java SDK (Maven)
         run: |
@@ -84,7 +84,7 @@ jobs:
           sudo chown -R $USER:$USER generated/java
           
       - name: Setup Java Environment
-        uses: actions/setup-java@6a0805f757400d826da6003023fc6de06d741ed7
+        uses: actions/setup-java@623c707d77e926f0f5a50f82e56da1a94d0326f0
         with:
           distribution: 'temurin'
           java-version: '21'
