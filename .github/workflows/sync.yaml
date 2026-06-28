@@ -1,5 +1,4 @@
 # MIT License
-# 
 # Copyright (c) 2026 Darkstone Cloud Platform
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,10 +20,12 @@
 # SOFTWARE.
 
 name: Hourly Java API Sync
+
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
+
 jobs:
   check-spec:
     runs-on: ubuntu-latest
@@ -33,7 +34,8 @@ jobs:
     outputs:
       changed: ${{ steps.check_spec.outputs.changed }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      
       - name: Check for updates
         id: check_spec
         run: |
@@ -45,6 +47,7 @@ jobs:
             mv current.json openapi-spec.json
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
+          
       - name: Commit Spec Update
         if: steps.check_spec.outputs.changed == 'true'
         run: |
@@ -64,29 +67,29 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      
       - name: Generate Java SDK (Maven)
         run: |
           mkdir -p generated/java
+          # Nutzt openapitools/openapi-generator-cli mit dem fixen Digest für v7.5.0
           docker run --rm -v ${{ github.workspace }}:/local \
             -e GENERATOR_CLI_JVM_ARGS="-DapiTests=false -DmodelTests=false -DapiDocs=false -DmodelDocs=false" \
-            openapitools/openapi-generator-cli generate \
+            openapitools/openapi-generator-cli@sha256:d82e2df5ecbbdbf609e9007f3521d89816223274291845eb5c94fa103ef8e945 generate \
             -i /local/openapi-spec.json \
             -g java \
             -o /local/generated/java \
             --skip-validate-spec \
             --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model
-
           sudo chown -R $USER:$USER generated/java
-
+          
       - name: Setup Java Environment
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@6a0805f757400d826da6003023fc6de06d741ed7
         with:
           distribution: 'temurin'
           java-version: '21'
-          server-id: github # Richtet die Authentifizierung für GitHub Packages ein
-
+          server-id: github
+          
       - name: Publish Java Package via Maven
         run: |
           cd generated/java
