@@ -75,7 +75,7 @@ jobs:
           # Nutzt openapitools/openapi-generator-cli mit dem fixen Digest für v7.5.0
           docker run --rm -v ${{ github.workspace }}:/local \
             -e GENERATOR_CLI_JVM_ARGS="-DapiTests=false -DmodelTests=false -DapiDocs=false -DmodelDocs=false" \
-            openapitools/openapi-generator-cli@sha256:d82e2df5ecbbdbf609e9007f3521d89816223274291845eb5c94fa103ef8e945 generate \
+            openapitools/openapi-generator-cli@sha256:3366e328c44a4e95f07416a46445d79d8d13249369ca52bab2b17dd0f333edfe generate \
             -i /local/openapi-spec.json \
             -g java \
             -o /local/generated/java \
