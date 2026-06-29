@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-name: Hourly Java API Sync
+name: Hourly API Sync
 
 on:
   schedule:
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # WICHTIG: Erlaubt das Schreiben in GitHub Packages
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -90,11 +90,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          server-id: github # Verknüpft die Credentials in der settings.xml mit der ID 'github'
+          server-id: github
           
       - name: Publish Java Package via Maven
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Übergibt das Token an Maven für die Authentifizierung
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd generated/java
           # version-set updatet die Version im pom.xml, bevor deploy aufgerufen wird
