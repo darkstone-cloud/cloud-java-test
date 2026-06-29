@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      packages: write # WICHTIG: Erlaubt das Schreiben in GitHub Packages
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,7 +74,6 @@ jobs:
       - name: Generate Java SDK (Maven)
         run: |
           mkdir -p generated/java
-          # Wechsel auf library=webclient zur Behebung der Type-Mismatch-Fehler bei Enums
           docker run --rm -v ${{ github.workspace }}:/local \
             -e GENERATOR_CLI_JVM_ARGS="-DapiTests=false -DmodelTests=false -DapiDocs=false -DmodelDocs=false" \
             openapitools/openapi-generator-cli:v7.11.0 generate \
@@ -91,11 +90,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          server-id: github
+          server-id: github # Verknüpft die Credentials in der settings.xml mit der ID 'github'
           
       - name: Publish Java Package via Maven
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Übergibt das Token an Maven für die Authentifizierung
         run: |
           cd generated/java
+          # version-set updatet die Version im pom.xml, bevor deploy aufgerufen wird
+          mvn versions:set -DnewVersion="1.0.${{ github.run_number }}"
           mvn deploy \
-            -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }} \
-            -Dversion="1.0.${{ github.run_number }}"
+            -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }}
