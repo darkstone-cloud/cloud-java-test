@@ -69,12 +69,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main # Holt den soeben hochgeladenen Commit inkl. neuer openapi-spec.json
+          ref: main
         
       - name: Generate Java SDK (Maven)
         run: |
           mkdir -p generated/java
-          # Nutzt openapitools/openapi-generator-cli mit v7.11.0 und useEnumCaseInsensitive=true zur Behebung von Enum-Kompilierungsfehlern
+          # Wechsel auf library=webclient zur Behebung der Type-Mismatch-Fehler bei Enums
           docker run --rm -v ${{ github.workspace }}:/local \
             -e GENERATOR_CLI_JVM_ARGS="-DapiTests=false -DmodelTests=false -DapiDocs=false -DmodelDocs=false" \
             openapitools/openapi-generator-cli:v7.11.0 generate \
@@ -82,7 +82,7 @@ jobs:
             -g java \
             -o /local/generated/java \
             --skip-validate-spec \
-            --additional-properties=library=native,useEnumCaseInsensitive=true,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model
+            --additional-properties=library=webclient,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model
           
           sudo chown -R $USER:$USER generated/java
           
