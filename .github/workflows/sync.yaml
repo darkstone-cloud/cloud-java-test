@@ -35,7 +35,7 @@ jobs:
       changed: ${{ steps.check_spec.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
-      
+        
       - name: Check for updates
         id: check_spec
         run: |
@@ -68,19 +68,21 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          ref: main # Holt den soeben hochgeladenen Commit inkl. neuer openapi-spec.json
+        
       - name: Generate Java SDK (Maven)
         run: |
           mkdir -p generated/java
-          # Nutzt openapitools/openapi-generator-cli über das stabile v7.5.0 Tag
+          # Nutzt openapitools/openapi-generator-cli mit v7.11.0 und useEnumCaseInsensitive=true zur Behebung von Enum-Kompilierungsfehlern
           docker run --rm -v ${{ github.workspace }}:/local \
             -e GENERATOR_CLI_JVM_ARGS="-DapiTests=false -DmodelTests=false -DapiDocs=false -DmodelDocs=false" \
-            openapitools/openapi-generator-cli:v7.5.0 generate \
+            openapitools/openapi-generator-cli:v7.11.0 generate \
             -i /local/openapi-spec.json \
             -g java \
             -o /local/generated/java \
             --skip-validate-spec \
-            --additional-properties=library=native,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model
+            --additional-properties=library=native,useEnumCaseInsensitive=true,groupId=de.darkstone,artifactId=cloud-java,invokerPackage=de.darkstone.client,apiPackage=de.darkstone.client.api,modelPackage=de.darkstone.client.model
           
           sudo chown -R $USER:$USER generated/java
           
