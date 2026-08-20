@@ -28,7 +28,7 @@ on:
 
 jobs:
   check-spec:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, swarm]
     permissions:
       contents: write
     outputs:
@@ -62,7 +62,7 @@ jobs:
   publish-java:
     needs: check-spec
     if: needs.check-spec.outputs.changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, swarm]
     permissions:
       contents: read
       packages: write
